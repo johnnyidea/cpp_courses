@@ -78,22 +78,30 @@ struct String {
         delete [] updated_Str;
     }
 
-//    int & operator [](int i) const
-//    {
-//        return i;
-//    }
 
-    String operator[](int i) const
+    class Tmp;
+
+    Tmp operator[](int i) const
     {
-        auto tmp = str;
-        return str;
+        return Tmp(str[i]);
     }
 
-    char & operator [](int j) const
+    class Tmp
     {
-        String res;
-        return res;//str[j];
-    }
+        char *array;
+
+    public:
+
+        Tmp (char *array)
+                : array(array)
+        { }
+
+        char &operator[](int index)
+        {
+            return array[index];
+        }
+    };
+
 
     size_t size;
     char *str;
