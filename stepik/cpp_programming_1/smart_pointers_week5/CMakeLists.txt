@@ -6,5 +6,6 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_executable(
     ${PROJECT_NAME}
-    task_1.cpp
-    )
+    #task_1.cpp
+    task_2.cpp
+)

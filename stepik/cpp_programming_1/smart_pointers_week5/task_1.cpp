@@ -89,15 +89,41 @@ struct ScopedPtr
     //
     explicit ScopedPtr(Expression *ptr = 0)
     {
-
+        ptr_ = ptr;
     }
-    // ~ScopedPtr()
-    // Expression* get() const
-    // Expression* release()
-    // void reset(Expression *ptr = 0)
-    // Expression& operator*() const
-    // Expression* operator->() const
 
+    ~ScopedPtr()
+    {
+        delete ptr_;
+    }
+
+    Expression* get() const
+    {
+        return ptr_;
+    }
+
+    Expression* release()
+    {
+        Expression * new_ptr = ptr_;
+        ptr_ = 0;
+        return std::move(new_ptr);
+    }
+
+    void reset(Expression *ptr = 0)
+    {
+        delete ptr_;
+        ptr_ = ptr;
+    }
+
+    Expression& operator*() const
+    {
+        return *ptr_;
+    }
+
+    Expression* operator->() const
+    {
+        return ptr_;
+    }
 
 private:
     // запрещаем копирование ScopedPtr
@@ -115,11 +141,26 @@ int main(int argc, char * argv[])
     Expression * sube = new BinaryOperation(new Number(4.5), '+', new Number(5));
     // потом используем его в выражении для +
     Expression * expr = new BinaryOperation(new Number(3), '*', sube);
-    // вычисляем и выводим результат: 28.5
-    std::cout << expr->evaluate() << std::endl;
 
 
-    ScopedPtr(exp);
+    ScopedPtr scoped_ptr(expr);
+
+    // вывоз метода расчета результата через оператор "стрелочка"
+    std::cout << scoped_ptr->evaluate() << std::endl;
+
+    // вывоз метода расчета результата через оператор разыменования "звездочка"
+    std::cout << scoped_ptr.operator*().evaluate() << std::endl;
+
+    // вывоз метода расчета результата через метод get
+    std::cout << scoped_ptr.get()->evaluate() << std::endl;
+
+    auto tmp = scoped_ptr.release();
+
+    if (scoped_ptr.get() == nullptr)
+        cout << "";
+
+    Expression * new_expr = new BinaryOperation(new Number(1.0), '+', new Number(2));
+    scoped_ptr.reset(new_expr);
 
     return 0;
 }
