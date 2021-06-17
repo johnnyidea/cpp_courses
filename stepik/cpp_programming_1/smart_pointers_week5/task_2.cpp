@@ -79,43 +79,47 @@ private:
 
 struct SharedPtr
 {
-    // реализуйте следующие методы
-    //
+
     explicit SharedPtr(Expression *ptr = 0)
-            : _ptr(ptr)
-            , _counter(1)
+        : _ptr(ptr)
+        , _counter(0)
     {
-//        if (ptr == nullptr)
-//            _counter == 0;
+        if (ptr)
+            _counter = new size_t(1);
     }
 
     ~SharedPtr()
     {
-        if (_counter == 1)
+        if (_counter && --*_counter == 0)
+        {
+            delete _counter;
             delete _ptr;
-
-        _counter--;
+        }
     }
 
     SharedPtr(const SharedPtr & old_ptr)
+        : _ptr    (old_ptr._ptr    )
+        , _counter(old_ptr._counter)
     {
-        //NB
-        if (old_ptr.get() != nullptr && this != &old_ptr)
-        {
-            old_ptr
-            *this = old_ptr;
-        }
+        if (_counter)
+            ++*_counter;
     }
 
     SharedPtr& operator=(const SharedPtr & assign_ptr)
     {
-        if (this != &assign_ptr)
+        if (_ptr == assign_ptr.get())
+            return *this;
+
+        if (_ptr != nullptr)
+            --*_counter;
+
+        if (assign_ptr.get() != nullptr)
         {
-            reset(assign_ptr.get());
-            _counter = assign_ptr._counter;
+            ++*assign_ptr._counter;
         }
 
-        _counter--;
+        _ptr = assign_ptr.get();
+        _counter = assign_ptr._counter;
 
         return *this;
     }
@@ -127,15 +131,18 @@ struct SharedPtr
 
     void reset(Expression *ptr = 0)
     {
-        if (ptr == nullptr)
+        if (_counter && --*_counter == 0)
         {
-            _counter == 1;
+            delete _ptr;
+            delete _counter;
         }
 
-        if (_counter == 1)
-            delete _ptr;
-
         _ptr = ptr;
+
+        if (ptr)
+            _counter = new size_t(1);
+        else
+            _counter = 0;
     }
 
     Expression& operator*() const
@@ -148,29 +155,37 @@ struct SharedPtr
         return _ptr;
     }
 
-    uint get_counter()
-    {
-        return _counter;
-    }
+private:
 
-    void inc()
-    {
-        ++_counter;
-    }
-    void dec()
-    {
-        --_counter;
-    }
-
-    private:
-
+    size_t * _counter;
     Expression *_ptr;
-    uint _counter{0};
 };
 
 //-----------------------------------------------------------------------------
 int main(int argc, char * argv[])
 {
+
+    {
+        Expression * p_tmp = new  BinaryOperation (new Number(0.0), '*', new Number(0.0));
+        SharedPtr p(p_tmp);
+        SharedPtr p2;
+        SharedPtr p3;
+
+        p2 = p;
+
+        p.reset(p3.get());
+    }
+    {
+        Expression * p_tmp1 = new  BinaryOperation (new Number(0.0), '*', new Number(0.0));
+        Expression * p_tmp2 = new  BinaryOperation (new Number(0.0), '*', new Number(0.0));
+        SharedPtr p2(p_tmp1);
+        SharedPtr p3(p2);
+        SharedPtr p4(p_tmp2);
+
+        p3 = p4;
+    }
+
+
     {
         Expression * p_tmp = new  BinaryOperation (new Number(0.0), '*', new Number(0.0));
         SharedPtr p(p_tmp);
@@ -179,6 +194,14 @@ int main(int argc, char * argv[])
     {
         SharedPtr p(NULL);
     }
+
+    {
+        Expression *p_tmp4 = new BinaryOperation(new Number(0.0), '*', new Number(0.0));
+        SharedPtr p4(p_tmp4);
+
+        p4 = p4;
+    }
+
 
     SharedPtr p1;
     {
@@ -193,16 +216,18 @@ int main(int argc, char * argv[])
         p1 = p5;
         p3.reset(NULL);
         p3 = p5;
-//        p5.reset(NULL);
-//        SharedPtr p6;
-//        SharedPtr p7;
-//        p7 = p7;
-//        p7.reset(NULL);
-//        p7.reset(new  BinaryOperation (new Number(7.0), '*', new Number(7.0)));
-//        SharedPtr p8(new  BinaryOperation (new Number(8.0), '*', new Number(8.0)));
-//        p8.reset(NULL);
+        p5.reset(NULL);
+        SharedPtr p6;
+        SharedPtr p7;
+        p7 = p7;
+        p7.reset(NULL);
+
+        SharedPtr p8(new  BinaryOperation (new Number(8.0), '*', new Number(8.0)));
+        p8.reset(NULL);
     }
-//    p1 = p1;
+    p1 = p1;
+
+
 
 
 
