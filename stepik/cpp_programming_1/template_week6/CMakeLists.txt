@@ -6,5 +6,6 @@ project(template_array)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable (${PROJECT_NAME}
-    template_array.cpp
-    )
+        #task_1.cpp
+        task_2.cpp
+        )
