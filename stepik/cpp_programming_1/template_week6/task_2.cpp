@@ -14,41 +14,84 @@
 using namespace std;
 
 
+/*
+Класс с закрытым оператором присваивания:
+*/
+template <typename Tx>
+struct X
+{
+    X()
+    {
+        this->x_ = new Tx();
+        *this->x_ = 1;
+    }
+    X(const X& inX)
+    {
+        this->x_ = new Tx();
+        *this->x_ = *inX.x_;
+    }
+    ~X() { delete this->x_; }
+    friend std::ostream& operator<< (std::ostream& s, const X& obj)
+    {
+        s << *(obj.x_);
+        return s;
+    }
+    void set(Tx i)
+    {
+        *(this->x_) = i;
+    }
+private:
+    X& operator=(const X& inX);
+    Tx *x_;
+};
+
+
+
 template <typename T>
 class Array
 {
 public:
     explicit Array(size_t size, const T& value = T())
             :_size(size)
-            ,_data((T*) new char[size * sizeof(T)]) //new T[size])
+            ,_data(static_cast<T*>(operator new[] (size * sizeof(T))))
     {
         for (size_t i = 0; i < size; i++)
-            _data[i] = value;
+            new (_data + i) T(value);
+    }
+
+    Array()
+        :_size(0)
+        ,_data(static_cast<T*>(operator new[] (0* sizeof(T))))
+    {
+//        _size = 0;
+//        _data = nullptr;
     }
 
     Array(const Array & array)
             :_size(array._size)
-            ,_data((T*) new char[array._size * sizeof(T)])
+            ,_data(static_cast<T*>(operator new[] (array._size * sizeof(T))))
     {
         for (size_t i = 0; i < _size; i++)
-            _data[i] = array._data[i];
+            new (_data + i) T(array._data[i]);
     };
 
     ~Array()
     {
-        delete [] (char*) _data;
+        if (_data)
+            delete [] (char*) _data;
     }
 
     Array& operator=(const Array &array)
     {
         if (this != &array)
         {
-            delete [] (char*) _data;
+            if (_data)
+                delete [] (char*) _data;
 
             _size = array.size();
-            _data = new T[array.size()];
+            _data = static_cast<T*>(operator new[] (array._size * sizeof(T)));
             for (size_t i = 0; i < array.size(); i++)
-                _data[i] = array._data[i];
+                new (_data + i) T(array._data[i]);
         }
         return *this;
     }
@@ -67,7 +110,6 @@ public:
     {
         return _data[index];
     }
-
 
     //TODO delete
     void prnt()
@@ -96,8 +138,17 @@ void test7();
 
 int main(int argc, char * argv[])
 {
+
+//    Array<Trace> empty1;
+
     test0();
     test1();
+    test2();
+    test3();
+    test4();
+    test5();
+    test6();
+    test7();
 
     return 0;
 }
@@ -189,6 +240,128 @@ void test1()
         Array<int> cx2(size_t(2), 55);
         cr = cx2;
         cr.prnt();
+    }
+    return;
+}
+
+
+void test2()
+{
+    cout << endl << "*****Test 2(copy constructor)**********" << endl;
+    {
+        cout << "*****CHAR**********" << endl;
+        Array<char> x(size_t(3), '3');
+        Array<char> ar(x);
+        ar.prnt();
+    }
+    {
+        cout << "*****STRING**********" << endl;
+        Array<string> x(size_t(3), "333");
+        Array<string> ar(x);
+        ar.prnt();
+    }
+
+    return;
+}
+
+void test3()
+{
+    cout << endl << "*****Test 3(Empty)**********" << endl;
+    {
+        cout << "*****CHAR**********" << endl;
+        Array<char> ar(size_t(0), '0');
+        ar = ar;
+        ar.prnt();
+    }
+    {
+        cout << "*****STRING**********" << endl;
+        Array<string> ar(size_t(0), "0");
+        ar = ar;
+        ar.prnt();
+    }
+    return;
+}
+
+void test4()
+{
+    cout << endl << "*****Test 4(assigment A=A) **********" << endl;
+    {
+        Array<char> ar(size_t(4), '0');
+        ar = ar;
+        ar.prnt();
+    }
+    return;
+}
+void test5()
+{
+    cout << endl << "*****Test 5(out bound)**********" << endl;
+    {
+        cout << "*****more**********" << endl;
+        Array<char> ar(size_t(4), '0');
+//        cout << ar[10] << endl;
+    }
+    {
+        cout << "*****less**********" << endl;
+        Array<char> ar(size_t(4), '0');
+//        cout << ar[-10] << endl;
+    }
+    return;
+}
+
+void test6()
+{
+    cout << endl << "*****Test 6(pointer)**********" << endl;
+    {
+        cout << "*****CHAR(copy)**********" << endl;
+        Array<char> *ar = new Array<char>(size_t(4), '4');
+        ar->prnt();
+        delete ar;
+    }
+    {
+        cout << "*****CHAR(=)**********" << endl;
+        Array<char> *ar = new Array<char>(size_t(5), '5');
+        ar->prnt();
+        Array<char> *xr = ar;
+        xr->prnt();
+        delete ar;
+    }
+    return;
+}
+
+void test7()
+{
+    cout << endl << "*****Test 7(X-object)**********" << endl;
+    {
+        cout << "***** X<INT> **********" << endl;
+        X<int> x;
+        x.set(4);
+        Array<X<int>> *ar = new Array<X<int>>(size_t(4), x);
+        ar->prnt();
+        delete ar;
+    }
+    {
+        cout << "***** X<CHAR> (new, =, copy) **********" << endl;
+        X<char> x;
+        x.set('c');
+        Array<X<char>> *ar = new Array<X<char>>(size_t(4), x);
+        ar->prnt();
+        Array<X<char>> *xr = ar;
+        xr->prnt();
+        Array<X<char>> y(*xr);
+        y.prnt();
+        delete ar;
+    }
+    {
+        cout << "***** X<STRING> (new, =, copy)**********" << endl;
+        X<string> x;
+        x.set("There are no tests for this task");
+        Array<X<string>> *ar = new Array<X<string>>(size_t(1),x );
+        ar->prnt();
+        Array<X<string>> *xr = ar;
+        xr->prnt();
+        Array<X<string>> y(*xr);
+        y.prnt();
+        delete ar;
     }
     return;
 }
