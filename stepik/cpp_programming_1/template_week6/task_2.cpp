@@ -61,24 +61,28 @@ public:
 
     Array()
         :_size(0)
-        ,_data(static_cast<T*>(operator new[] (0* sizeof(T))))
-    {
-//        _size = 0;
-//        _data = nullptr;
-    }
+        ,_data(static_cast<T*>(operator new[] (0)))
+    {}
 
     Array(const Array & array)
             :_size(array._size)
             ,_data(static_cast<T*>(operator new[] (array._size * sizeof(T))))
     {
         for (size_t i = 0; i < _size; i++)
-            new (_data + i) T(array._data[i]);
+            new(_data + i)T(array._data[i]);
     };
 
     ~Array()
     {
         if (_data)
-            delete [] (char*) _data;
+        {
+            for (size_t i = 0; i < _size; i++)
+                _data[i].~T();
+
+            delete[] (char *) _data;
+
+            _data = nullptr;
+        }
     }
 
     Array& operator=(const Array &array)
@@ -86,11 +90,18 @@ public:
         if (this != &array)
         {
             if (_data)
-                delete [] (char*) _data;
+            {
+                for (size_t i = 0; i < _size; i++)
+                    _data[i].~T();
+
+                delete[] (char *) _data;
+
+                _data = nullptr;
+            }
 
             _size = array.size();
-            _data = static_cast<T*>(operator new[] (array._size * sizeof(T)));
-            for (size_t i = 0; i < array.size(); i++)
+            _data = static_cast<T*>(operator new[] (array.size() * sizeof(T)));
+            for (size_t i = 0; i < array._size; i++)
                 new (_data + i) T(array._data[i]);
         }
         return *this;
@@ -111,7 +122,6 @@ public:
         return _data[index];
     }
 
-    //TODO delete
     void prnt()
     {
         for (size_t i = 0; i < _size; ++i)
@@ -138,16 +148,16 @@ void test7();
 
 int main(int argc, char * argv[])
 {
+//    X<string> x;
+    Array<X<string>> empty1;
 
-//    Array<Trace> empty1;
-
-    test0();
-    test1();
-    test2();
-    test3();
-    test4();
-    test5();
-    test6();
+//    test0();
+//    test1();
+//    test2();
+//    test3();
+//    test4();
+//    test5();
+//    test6();
     test7();
 
     return 0;
@@ -298,12 +308,12 @@ void test5()
     {
         cout << "*****more**********" << endl;
         Array<char> ar(size_t(4), '0');
-//        cout << ar[10] << endl;
+        cout << ar[10] << endl;
     }
     {
         cout << "*****less**********" << endl;
         Array<char> ar(size_t(4), '0');
-//        cout << ar[-10] << endl;
+        cout << ar[-10] << endl;
     }
     return;
 }
