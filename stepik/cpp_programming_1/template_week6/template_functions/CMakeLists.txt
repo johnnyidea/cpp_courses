@@ -7,4 +7,5 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable( ${PROJECT_NAME}
         #task_1.cpp
         #task_2.cpp
-        task_3.cpp)
+#        task_3.cpp
+        task_4.cpp)
